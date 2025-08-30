@@ -4,7 +4,7 @@ import * as dotenv from 'dotenv';
 import {GoogleGenerativeAI}from '@google/generative-ai'
 
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-dotenv.config()
+dotenv.config();
 const pine_api=`${process.env.PINE_API}`;
 const pc = new Pinecone(
     {

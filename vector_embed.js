@@ -36,9 +36,9 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-var pdf_1 = require("@langchain/community/document_loaders/fs/pdf");
+var dotenv = require("dotenv");
+dotenv.config();
 var generative_ai_1 = require("@google/generative-ai");
-var textt;
 var genAI = new generative_ai_1.GoogleGenerativeAI(process.env.GEM_API);
 function createEmbed(text) {
     return __awaiter(this, void 0, void 0, function () {
@@ -61,23 +61,27 @@ function createEmbed(text) {
         });
     });
 }
+//driver function
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var pdfPath, loader, docs, res;
+        var text, embedd, error_2;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    pdfPath = "./docs/story.pdf";
-                    loader = new pdf_1.PDFLoader(pdfPath);
-                    return [4 /*yield*/, loader.load()];
+                    text = "Hello I am Tamal";
+                    _a.label = 1;
                 case 1:
-                    docs = _a.sent();
-                    textt = docs[0].pageContent;
-                    return [4 /*yield*/, createEmbed(textt)];
+                    _a.trys.push([1, 3, , 4]);
+                    return [4 /*yield*/, createEmbed(text)];
                 case 2:
-                    res = _a.sent();
-                    console.log(res);
-                    return [2 /*return*/];
+                    embedd = _a.sent();
+                    console.log(embedd.values);
+                    return [3 /*break*/, 4];
+                case 3:
+                    error_2 = _a.sent();
+                    console.log(error_2);
+                    return [3 /*break*/, 4];
+                case 4: return [2 /*return*/];
             }
         });
     });

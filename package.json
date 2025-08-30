@@ -9,6 +9,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@google/generative-ai": "^0.24.1",
     "@langchain/community": "^0.3.53",
     "@langchain/core": "^0.3.72",
     "@pinecone-database/pinecone": "^6.1.2",

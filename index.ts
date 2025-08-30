@@ -12,14 +12,58 @@ const pc = new Pinecone(
     }
 );
 
-const indexName = 'developer-quickstart-js';
-pc.createIndexForModel({
+const genAI=new GoogleGenerativeAI(process.env.GEM_API);
+async function createEmbed(text){
+    try{
+        const model = genAI.getGenerativeModel({model:"embedding-001"});
+        const res=await model.embedContent(text);
+        return res.embedding;
+    }
+    catch(error){
+        console.log(error);
+    }
+
+}
+async function main(){
+  //loading the file path
+    const pdfPath="./docs/story.pdf"
+    //new obj to load the pdf
+const loader = new PDFLoader(pdfPath)
+//converting to text
+const docs=await loader.load();
+//storing it
+var textt=docs[0].pageContent;
+//creating embeddings
+var res = await createEmbed(textt);
+console.log("Embeddings created scuccesfully");
+
+//sending to pinecone
+const indexName = 'gemini-embed-768';
+await pc.createIndex({
   name: indexName,
-  cloud: 'aws',
-  region: 'us-east-1',
-  embed: {
-    model: 'llama-text-embed-v2',
-    fieldMap: { text: 'chunk_text' },
-  },
-  waitUntilReady: true,
+  dimension: 768, // Match Gemini's dimension
+  metric: 'cosine',
+  spec: {
+    serverless: {
+      cloud: 'aws',
+      region: 'us-east-1'
+    }
+  }
 });
+// After pc.createIndex, add:
+console.log("Waiting for index to be ready...");
+await new Promise(resolve => setTimeout(resolve, 6000)); // Wait 10 seconds
+//creating index
+const index=pc.Index(indexName);
+await index.upsert([
+  {
+    id:'pdf-chunk-1',
+    values:res.values,
+    metadata:{
+      source:'story.pdf'
+    }
+  }
+]);
+console.log("Sent to pinecone successfully");
+}
+main();

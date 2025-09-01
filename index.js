@@ -67,9 +67,46 @@ function createEmbed(text) {
         });
     });
 }
+function testGet(queryText) {
+    return __awaiter(this, void 0, void 0, function () {
+        var queryEmbed, index, searchResult, dataa_r, similar, model, prompt_1, result, error_2;
+        return __generator(this, function (_a) {
+            switch (_a.label) {
+                case 0:
+                    _a.trys.push([0, 4, , 5]);
+                    return [4 /*yield*/, createEmbed(queryText)];
+                case 1:
+                    queryEmbed = _a.sent();
+                    index = pc.index("gemini-embed-765");
+                    return [4 /*yield*/, index.query({
+                            vector: queryEmbed.values,
+                            topK: 1,
+                            includeMetadata: true
+                        })];
+                case 2:
+                    searchResult = _a.sent();
+                    if (searchResult.matches.length === 0)
+                        return [2 /*return*/, "No match found"];
+                    dataa_r = searchResult.matches[0].metadata.text || "Couldnt get the content";
+                    similar = searchResult.matches[0].score;
+                    model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+                    prompt_1 = "Based on this content from a PDF document:\n\n\"".concat(dataa_r, "\"\n\nUser Question: ").concat(queryText, "\n\nPlease answer the user's question using the provided content. If the content doesn't contain relevant information, say so clearly.");
+                    return [4 /*yield*/, model.generateContent(prompt_1)];
+                case 3:
+                    result = _a.sent();
+                    return [2 /*return*/, result.response.text()];
+                case 4:
+                    error_2 = _a.sent();
+                    console.log(error_2);
+                    return [3 /*break*/, 5];
+                case 5: return [2 /*return*/];
+            }
+        });
+    });
+}
 function main() {
     return __awaiter(this, void 0, void 0, function () {
-        var pdfPath, loader, docs, textt, res, indexName, index;
+        var pdfPath, loader, docs, textt, res, indexName, index, questions, _i, questions_1, question, answer;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -83,7 +120,7 @@ function main() {
                 case 2:
                     res = _a.sent();
                     console.log("Embeddings created scuccesfully");
-                    indexName = 'gemini-embed-768';
+                    indexName = 'gemini-embed-765';
                     return [4 /*yield*/, pc.createIndex({
                             name: indexName,
                             dimension: 768, // Match Gemini's dimension
@@ -108,14 +145,36 @@ function main() {
                                 id: 'pdf-chunk-1',
                                 values: res.values,
                                 metadata: {
-                                    source: 'story.pdf'
+                                    source: 'story.pdf',
+                                    text: textt.substring(0, 1000)
                                 }
                             }
                         ])];
                 case 5:
                     _a.sent();
                     console.log("Sent to pinecone successfully");
-                    return [2 /*return*/];
+                    console.log("Testing the data");
+                    questions = [
+                        "What is this story about?",
+                        "Who are the main characters?",
+                        "What happens in the beginning?",
+                        "Tell me about the plot"
+                    ];
+                    _i = 0, questions_1 = questions;
+                    _a.label = 6;
+                case 6:
+                    if (!(_i < questions_1.length)) return [3 /*break*/, 9];
+                    question = questions_1[_i];
+                    console.log("\nQuestion: ".concat(question));
+                    return [4 /*yield*/, testGet(question)];
+                case 7:
+                    answer = _a.sent();
+                    console.log("Gemini's Answer: ".concat(answer, "\n"));
+                    _a.label = 8;
+                case 8:
+                    _i++;
+                    return [3 /*break*/, 6];
+                case 9: return [2 /*return*/];
             }
         });
     });

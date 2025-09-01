@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import {GoogleGenerativeAI}from '@google/generative-ai'
 
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import { text } from "stream/consumers";
 dotenv.config();
 const pine_api=`${process.env.PINE_API}`;
 const pc = new Pinecone(
@@ -24,6 +25,7 @@ async function createEmbed(text){
     }
 
 }
+
 async function main(){
   //loading the file path
     const pdfPath="./docs/story.pdf"
@@ -38,7 +40,7 @@ var res = await createEmbed(textt);
 console.log("Embeddings created scuccesfully");
 
 //sending to pinecone
-const indexName = 'gemini-embed-768';
+const indexName = 'gemini-embed-765';
 await pc.createIndex({
   name: indexName,
   dimension: 768, // Match Gemini's dimension
@@ -60,7 +62,8 @@ await index.upsert([
     id:'pdf-chunk-1',
     values:res.values,
     metadata:{
-      source:'story.pdf'
+      source:'story.pdf',
+      text:textt.substring(0,1000)
     }
   }
 ]);

@@ -25,5 +25,6 @@ const docs=await loader.load();
 textt=docs[0].pageContent;
 var res = await createEmbed(textt);
 console.log("Embeddings created sucessfully!");
+return res;
 }
  export default pdf_embed;

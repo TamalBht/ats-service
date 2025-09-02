@@ -105,7 +105,7 @@ function answerQuery(query_1) {
                     scores = q_match.map(function (match) { return match.score || 0; });
                     avgScore = scores.reduce(function (sum, score) { return sum + score; }, 0) / scores.length;
                     maxScore = Math.max.apply(Math, scores);
-                    prompt = "Based on semantic similarity search in a story PDF document, analyze this query pattern:\n\nQUERY: \"".concat(query, "\"\n\nSEARCH RESULTS:\n- ").concat(q_match.length, " semantically similar sections found\n- Similarity scores: ").concat(scores.map(function (s) { return s.toFixed(3); }).join(', '), "\n- Average similarity: ").concat(avgScore.toFixed(3), "\n- Highest similarity: ").concat(maxScore.toFixed(3), "\n- Related chunk IDs: ").concat(chunkIds.join(', '), "\n\n\nTASK: Based on these similarity patterns, provide a helpful response about what the user is asking regarding the story. Consider:\n\n- High scores (>0.8): Very relevant story elements\n- Medium scores (0.6-0.8): Somewhat related themes  \n- Multiple high scores: Well-covered topic in the story\n- Single high score: Specific story element\n\nGenerate a response that:\n1. Acknowledges what aspects of the story seem most relevant to their query\n2. Explains the confidence level based on similarity scores\n3. Suggests what story elements or themes their query relates to\n4. Is honest about working with semantic similarity only (no direct text access)\n\nKeep the response conversational and helpful for someone asking about a story.");
+                    prompt = "\n\nQUERY: \"".concat(query, "\"\n\nSEARCH RESULTS:\n- ").concat(q_match.length, " semantically similar sections found\n- Similarity scores: ").concat(scores.map(function (s) { return s.toFixed(3); }).join(', '), "\n- Average similarity: ").concat(avgScore.toFixed(3), "\n- Highest similarity: ").concat(maxScore.toFixed(3), "\n- Related chunk IDs: ").concat(chunkIds.join(', '), "\n\n\n\n\n\n\n\nKeep the response conversational and helpful for someone asking about a story.");
                     model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
                     return [4 /*yield*/, model.generateContent(prompt)];
                 case 3:
@@ -171,6 +171,7 @@ function tester() {
                     testQueries = [
                         "What is this story about?",
                         "Who is Arin?",
+                        "What is the content of the data given to you",
                         "What is the plot?",
                         "Tell me about the ending"
                     ];

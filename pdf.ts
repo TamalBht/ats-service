@@ -18,12 +18,12 @@ async function createEmbed(text){
     }
 
 }
-async function main(){
-    const pdfPath="./docs/story.pdf"
+async function pdf_embed(path){
+    const pdfPath=`${path}`||"./docs/story.pdf"
 const loader = new PDFLoader(pdfPath)
 const docs=await loader.load();
 textt=docs[0].pageContent;
 var res = await createEmbed(textt);
-console.log(res);
+console.log("Embeddings created sucessfully!");
 }
- main();
+ export default pdf_embed;

@@ -71,7 +71,7 @@ async function answerQuery(
     const scores=q_match.map(match=>match.score || 0);
     const avgScore=scores.reduce((sum,score)=>sum+score,0)/scores.length;
     const maxScore=Math.max(...scores);
-    const prompt=`Based on semantic similarity search in a story PDF document, analyze this query pattern:
+    const prompt=`
 
 QUERY: "${query}"
 
@@ -83,18 +83,10 @@ SEARCH RESULTS:
 - Related chunk IDs: ${chunkIds.join(', ')}
 
 
-TASK: Based on these similarity patterns, provide a helpful response about what the user is asking regarding the story. Consider:
 
-- High scores (>0.8): Very relevant story elements
-- Medium scores (0.6-0.8): Somewhat related themes  
-- Multiple high scores: Well-covered topic in the story
-- Single high score: Specific story element
 
-Generate a response that:
-1. Acknowledges what aspects of the story seem most relevant to their query
-2. Explains the confidence level based on similarity scores
-3. Suggests what story elements or themes their query relates to
-4. Is honest about working with semantic similarity only (no direct text access)
+
+
 
 Keep the response conversational and helpful for someone asking about a story.`
 
@@ -144,7 +136,7 @@ async function  tester(){
     const testQueries = [
         "What is this story about?",
         "Who is Arin?", 
-        
+        "What is the content of the data given to you",
         "What is the plot?",
         "Tell me about the ending"
     ];

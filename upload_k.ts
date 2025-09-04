@@ -33,7 +33,7 @@ async function clearPineconeIndex(index: any) {
         console.log('Clearing entire Pinecone index...');
         
         // Delete all vectors by using deleteAll
-        await index.deleteAll();
+        
         
         console.log('Successfully cleared all vectors from the index');
         

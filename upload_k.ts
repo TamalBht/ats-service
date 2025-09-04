@@ -34,6 +34,7 @@ async function clearPineconeIndex(index: any) {
         
         // Delete all vectors by using deleteAll
         
+        await index.deleteAll();
         
         console.log('Successfully cleared all vectors from the index');
         
@@ -142,6 +143,7 @@ async function main() {
         // Step 1: Clear the entire database
         await clearPineconeIndex(index);
         
+        
         // Step 2: Load CSV data (filtered for developer records only)
         console.log('\nLoading and filtering CSV data for developer records...');
         const csvData = await loadCSVData(csvFilePath);
@@ -160,6 +162,7 @@ async function main() {
         // Process each batch
         let totalUploaded = 0;
         for (let batchIndex = 0; batchIndex < batches.length; batchIndex++) {
+        for (let batchIndex = 99; batchIndex < batches.length; batchIndex++) {
             const batch = batches[batchIndex];
             const startId = batchIndex * batchSize;
             

@@ -23,6 +23,7 @@ class ATSScoreer{
         this.genAI=new GoogleGenerativeAI(api);
     }
     async calculateATS(resumeText:string):Promise<Result>{
+
         const model=this.genAI.getGenerativeModel({model:"gemini-2.5-pro"});
          const prompt = `
 Analyze this resume text and give it an ATS (Applicant Tracking System) score from 0 to 100.
@@ -30,6 +31,7 @@ Analyze this resume text and give it an ATS (Applicant Tracking System) score fr
 Resume text:
 """
 ${resumeText}
+
 """
 
 Please respond in this exact format:

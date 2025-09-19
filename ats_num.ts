@@ -6,7 +6,7 @@ interface Result {
   score: number;
   feedback: string;
 }
-async function pdf_text(path){
+async function pdf_text(path:String){
     const pdfPath=`${path}`||"./docs/story.pdf"
     const loader = new PDFLoader(pdfPath)
     const docs=await loader.load();
@@ -24,7 +24,7 @@ class ATSScoreer{
     }
     async calculateATS(resumeText:string):Promise<Result>{
 
-        const model=this.genAI.getGenerativeModel({model:"gemini-2.5-pro"});
+        const model=this.genAI.getGenerativeModel({model:"gemini-1.5-flash"});
          const prompt = `
 Analyze this resume text and give it an ATS (Applicant Tracking System) score from 0 to 100.
 
@@ -71,7 +71,7 @@ async function main(){
         console.log("ATS Score:", result.score);
         console.log("Feedback:", result.feedback);
     } catch (error) {
-        console.error("Error:", error.message);
+        console.error(error);
     }
 }
 

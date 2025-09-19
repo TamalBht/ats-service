@@ -14,6 +14,13 @@ async function createEmbed(text) {
         console.log(error);
     }
 }
+async function pdf_text(path) {
+    const pdfPath = `${path}` || "./docs/story.pdf";
+    const loader = new PDFLoader(pdfPath);
+    const docs = await loader.load();
+    textt = docs[0].pageContent;
+    return textt;
+}
 async function pdf_embed(path) {
     const pdfPath = `${path}` || "./docs/story.pdf";
     const loader = new PDFLoader(pdfPath);
@@ -23,4 +30,4 @@ async function pdf_embed(path) {
     console.log("Embeddings created sucessfully!");
     return res;
 }
-export default pdf_embed;
+export default { pdf_embed, pdf_text };

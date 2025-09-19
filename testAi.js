@@ -36,34 +36,38 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
     }
 };
 Object.defineProperty(exports, "__esModule", { value: true });
+var groq_1 = require("@langchain/groq");
 var dotenv = require("dotenv");
-var generative_ai_1 = require("@google/generative-ai");
 dotenv.config();
-var api = process.env.GEM_API;
-var genAI = new generative_ai_1.GoogleGenerativeAI(api);
-function testAI() {
+function askGrok() {
     return __awaiter(this, void 0, void 0, function () {
-        var model, prompt, result, error_1;
+        var model, question, response, error_1;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
-                    model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-                    prompt = "Write a short poem about AI in 4 lines.";
+                    model = new groq_1.ChatGroq({
+                        apiKey: process.env.GROK_API,
+                        model: "llama-3.3-70b-versatile"
+                    });
+                    question = "What is the capital of France?";
                     _a.label = 1;
                 case 1:
                     _a.trys.push([1, 3, , 4]);
-                    return [4 /*yield*/, model.generateContent(prompt)];
+                    return [4 /*yield*/, model.invoke(question)];
                 case 2:
-                    result = _a.sent();
-                    console.log(result.response.text());
+                    response = _a.sent();
+                    // Log the answer
+                    console.log("Question:", question);
+                    console.log("Answer:", response.content);
                     return [3 /*break*/, 4];
                 case 3:
                     error_1 = _a.sent();
-                    console.log(error_1);
+                    console.error("Error:", error_1);
                     return [3 /*break*/, 4];
                 case 4: return [2 /*return*/];
             }
         });
     });
 }
-testAI();
+// Run the function
+askGrok();

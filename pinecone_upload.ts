@@ -9,7 +9,7 @@ const pc = new Pinecone(
 
 async function pine_upload(indexName,id,res,substring){
     try{
-        const indName=indexName || "gemini-embed-768";
+        const indName=indexName || "ats-embed";
     const index=pc.Index(indName);
     var n= Math.random();
     const idd=id || `pdf-chunk-${n}`

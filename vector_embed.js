@@ -23,4 +23,4 @@ async function main() {
         console.log(error);
     }
 }
-main();
+export default createEmbed;

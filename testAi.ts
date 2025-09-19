@@ -1,16 +1,29 @@
-import * as dotenv from 'dotenv';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { ChatGroq } from "@langchain/groq";
+import * as dotenv from "dotenv"
 dotenv.config();
-const api=process.env.GEM_API;
-const genAI=new GoogleGenerativeAI(api);
-async function testAI(){
-    const model=genAI.getGenerativeModel({model:"gemini-2.5-pro"});
-    const prompt="Write a short poem about AI in 4 lines."; 
-    try{
-        const result=await model.generateContent(prompt);
-        console.log(result.response.text());
-    }catch(error){
-        console.log(error);
-    }   
+
+async function askGrok() {
+  // Initialize the Grok model
+  const model = new ChatGroq({
+    apiKey: process.env.GROK_API,
+    model: "llama-3.3-70b-versatile"
+  });
+
+  // Predefined question
+  const question = "What is the capital of France?";
+
+  try {
+    // Ask the question and get response
+    const response = await model.invoke(question);
+    
+    // Log the answer
+    console.log("Question:", question);
+    console.log("Answer:", response.content);
+    
+  } catch (error) {
+    console.error("Error:", error);
+  }
 }
-testAI();
+
+// Run the function
+askGrok();

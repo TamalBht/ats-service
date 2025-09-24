@@ -1,7 +1,10 @@
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import * as dotenv from "dotenv";
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
+import express from 'express';
+import multer from "multer";
 dotenv.config();
+const upload = multer({ storage: multer.memoryStorage() });
 async function pdf_text(path) {
     const pdfPath = `${path}` || "./docs/story.pdf";
     const loader = new PDFLoader(pdfPath);
@@ -9,33 +12,76 @@ async function pdf_text(path) {
     var textt = docs[0].pageContent;
     return textt;
 }
+async function pdf_parse(buffer) {
+    const uintArray = new Uint8Array(buffer);
+    const blob = new Blob([uintArray], { type: 'application/pdf' });
+    const loader = new PDFLoader(blob);
+    const docs = await loader.load();
+    var textt = docs[0].pageContent;
+    return textt;
+}
 class ATSScoreer {
-    genAI;
     constructor() {
-        const api = process.env.GEM_API;
+        const api = process.env.GROK_API;
         if (!api) {
             throw new Error('GEM_API environment variable not found');
         }
-        this.genAI = new GoogleGenerativeAI(api);
+        this.groq = new Groq({
+            apiKey: api
+        });
     }
     async calculateATS(resumeText) {
-        const model = this.genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        // const model=this.genAI.getGenerativeModel({model:"gemini-1.5-flash"});
         const prompt = `
-Analyze this resume text and give it an ATS (Applicant Tracking System) score from 0 to 100.
+You are a strict ATS (Applicant Tracking System) analyzer. Your job is to find problems and areas for improvement in resumes. Be critical and thorough in your analysis.
 
 Resume text:
 """
 ${resumeText}
-
 """
 
-Please respond in this exact format:
+IMPORTANT: You must identify at least 2-3 specific issues unless this is a perfect resume (which is extremely rare). Look for these common problems:
+
+**ALWAYS CHECK FOR:**
+- Missing quantified achievements (numbers, percentages, dollar amounts)
+- Weak action verbs or passive language
+- Missing industry keywords
+- Poor section organization or missing sections
+- Generic job descriptions without specifics
+- No professional summary or weak summary
+- Missing technical skills section
+- Inconsistent formatting or bullet points
+- Too much or too little white space
+- Unprofessional email addresses
+- Missing LinkedIn profile
+- Spelling/grammar errors
+- Vague responsibilities instead of concrete achievements
+- Missing education details or certifications
+- No contact information optimization
+
+**BE CRITICAL - FIND SPECIFIC PROBLEMS:**
+- If achievements lack numbers, mention it
+- If job descriptions are generic, call it out  
+- If skills are not well-organized, note it
+- If sections are missing or poorly named, identify them
+- If the resume lacks industry-specific keywords, specify which ones
+
+Score from 0-100 and respond in this exact format:
+
 SCORE: [number from 0-100]
-FEEDBACK: [brief feedback about what's good and what needs improvement]
+
+MISTAKES: [YOU MUST list at least 2-3 specific, actionable issues. Examples: "Missing quantified achievements in work experience", "No professional summary section", "Generic job descriptions without specific accomplishments", "Missing technical skills section", "Weak action verbs used", "No LinkedIn profile mentioned", etc. Only write "None identified" if truly exceptional]
+
+FEEDBACK: [Provide specific, actionable recommendations for each mistake identified. Be constructive but direct about what needs improvement]
 `;
         try {
-            const result = await model.generateContent(prompt);
-            const response = result.response.text();
+            const completion = await this.groq.chat.completions.create({
+                messages: [{ role: 'user', content: prompt }],
+                model: 'llama-3.1-8b-instant',
+                temperature: 0.3,
+                max_tokens: 1024,
+            });
+            const response = completion.choices[0]?.message?.content || "";
             return this.parseResponse(response);
         }
         catch (error) {
@@ -44,10 +90,12 @@ FEEDBACK: [brief feedback about what's good and what needs improvement]
     }
     parseResponse(response) {
         const scoreMatch = response.match(/SCORE:\s*(\d+)/i);
-        const feedbackMatch = response.match(/FEEDBACK:\s*(.*)/i);
+        const mistakesMatch = response.match(/MISTAKES:\s*(.*?)(?=FEEDBACK:|$)/i);
+        const feedbackMatch = response.match(/FEEDBACK:\s*([\s\S]*)/i);
         const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+        const mistakes = mistakesMatch ? mistakesMatch[1].trim() : 'No mistakes identified';
         const feedback = feedbackMatch ? feedbackMatch[1].trim() : 'No feedback available';
-        return { score, feedback };
+        return { score, mistakes, feedback };
     }
 }
 async function getScore(resumeText) {
@@ -55,15 +103,36 @@ async function getScore(resumeText) {
     const result = await atsScorer.calculateATS(resumeText);
     return result;
 }
-async function main() {
+const app = express();
+const PORT = 3000;
+app.use(express.json());
+app.post('/api/score', upload.single('resume'), async (req, res) => {
     try {
-        var text = await pdf_text("./docs/Tamal Bhattacharjee.pdf");
-        const result = await getScore(text);
-        console.log("ATS Score:", result.score);
-        console.log("Feedback:", result.feedback);
+        if (!req.file) {
+            return res.status(400).json({ error: 'No pdf file uploaded' });
+        }
+        var res_text = await pdf_parse(req.file.buffer);
+        if (!res_text.trim()) {
+            return res.status(400).json({ error: 'Couldnt extract text from PDF' });
+        }
+        const result = await getScore(res_text);
+        res.json({
+            success: true,
+            atsScore: result.score,
+            mistakes: result.mistakes,
+            feedback: result.feedback
+        });
     }
     catch (error) {
         console.error(error);
+        res.status(500).json({ error: 'Internal Server Error' });
     }
-}
-main();
+});
+app.get('/health', (req, res) => {
+    res.json({ status: 'Server is running', timestamp: new Date().toISOString() });
+});
+app.listen(PORT, () => {
+    console.log(`ATS Scorer API server running on port ${PORT}`);
+    console.log(`POST /ats-score - Upload resume PDF for ATS scoring`);
+    console.log(`GET /health - Health check`);
+});

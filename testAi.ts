@@ -1,29 +1,21 @@
-import { ChatGroq } from "@langchain/groq";
-import * as dotenv from "dotenv"
-dotenv.config();
+import Groq from 'groq-sdk';
+import 'dotenv/config';
 
-async function askGrok() {
-  // Initialize the Grok model
-  const model = new ChatGroq({
-    apiKey: process.env.GROK_API,
-    model: "llama-3.3-70b-versatile"
-  });
+const groq = new Groq({
+  apiKey: process.env.GROK_API,
+});
 
-  // Predefined question
-  const question = "What is the capital of France?";
-
+const test = async () => {
   try {
-    // Ask the question and get response
-    const response = await model.invoke(question);
-    
-    // Log the answer
-    console.log("Question:", question);
-    console.log("Answer:", response.content);
-    
-  } catch (error) {
-    console.error("Error:", error);
-  }
-}
+    const completion = await groq.chat.completions.create({
+      messages: [{ role: 'user', content: 'Hello!' }],
+      model: 'llama-3.1-8b-instant',
+    });
 
-// Run the function
-askGrok();
+    console.log('✅ Test passed:', completion.choices[0]?.message?.content);
+  } catch (error) {
+    console.log('❌ Test failed:', error);
+  }
+};
+
+test();

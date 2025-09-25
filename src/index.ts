@@ -1,19 +1,18 @@
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import * as dotenv from "dotenv"
 
-
 import Groq from 'groq-sdk';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import express from 'express';
 import multer from "multer";
 
-
 dotenv.config();
+
 interface Result {
   score: number;
-  mistakes: string;
   feedback: string;
 }
+
 const upload = multer({ storage: multer.memoryStorage() });
 
 async function pdf_text(path:String){
@@ -23,6 +22,7 @@ async function pdf_text(path:String){
     var textt=docs[0].pageContent;
     return textt;
 }
+
 async function pdf_parse(buffer:Buffer){
     const uintArray = new Uint8Array(buffer);
     const blob=new Blob([uintArray],{type:'application/pdf'});
@@ -31,8 +31,10 @@ async function pdf_parse(buffer:Buffer){
     var textt=docs[0].pageContent;
     return textt;
 }
+
 class ATSScoreer{
     private groq:Groq;
+    
     constructor(){
         const api=process.env.GROK_API;
         if (!api) {
@@ -42,10 +44,9 @@ class ATSScoreer{
             apiKey:api
         });
     }
+    
     async calculateATS(resumeText:string):Promise<Result>{
-
-        // const model=this.genAI.getGenerativeModel({model:"gemini-1.5-flash"});
-         const prompt = `
+        const prompt = `
 You are a strict ATS (Applicant Tracking System) analyzer. Your job is to find problems and areas for improvement in resumes. Be critical and thorough in your analysis.
 
 Resume text:
@@ -79,50 +80,81 @@ IMPORTANT: You must identify at least 2-3 specific issues unless this is a perfe
 - If sections are missing or poorly named, identify them
 - If the resume lacks industry-specific keywords, specify which ones
 
-Score from 0-100 and respond in this exact format:
-
-SCORE: [number from 0-100]
-
-MISTAKES: [YOU MUST list at least 2-3 specific, actionable issues. Examples: "Missing quantified achievements in work experience", "No professional summary section", "Generic job descriptions without specific accomplishments", "Missing technical skills section", "Weak action verbs used", "No LinkedIn profile mentioned", etc. Only write "None identified" if truly exceptional]
-
-FEEDBACK: [Provide specific, actionable recommendations for each mistake identified. Be constructive but direct about what needs improvement]
+Score from 0-100 and provide specific, actionable feedback for improvement.
 `;
-try {
-      const completion = await this.groq.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'llama-3.1-8b-instant',
-        temperature: 0.3,
-        max_tokens: 1024,
-      });
 
-      const response = completion.choices[0]?.message?.content || "";
-      return this.parseResponse(response);
-    } catch (error) {
-      throw new Error(`Failed to calculate ATS score: ${error}`);
+        try {
+            const completion = await this.groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: 'You are a strict ATS analyzer that finds problems and improvements for resumes.' },
+                    { role: 'user', content: prompt }
+                ],
+                model: 'meta-llama/llama-4-scout-17b-16e-instruct',
+                temperature: 0.3,
+                max_tokens: 1024,
+                response_format: {
+                    type: "json_schema",
+                    json_schema: {
+                        name: "ats_analysis",
+                        schema: {
+                            type: "object",
+                            properties: {
+                                score: { 
+                                    type: "number",
+                                    minimum: 0,
+                                    maximum: 100
+                                },
+                                feedback: { 
+                                    type: "string",
+                                    description: "Specific, actionable recommendations for improvement"
+                                }
+                            },
+                            required: ["score", "feedback"],
+                            additionalProperties: false
+                        }
+                    }
+                }
+            });
+
+            const response = completion.choices[0]?.message?.content || "{}";
+            return this.parseResponse(response);
+        } catch (error) {
+            throw new Error(`Failed to calculate ATS score: ${error}`);
+        }
     }
-    }
-    private parseResponse(response: string): 
-    Result {
-    const scoreMatch = response.match(/SCORE:\s*(\d+)/i);
-    const mistakesMatch = response.match(/MISTAKES:\s*(.*?)(?=FEEDBACK:|$)/i);
-    const feedbackMatch = response.match(/FEEDBACK:\s*([\s\S]*)/i);    
-    const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
-    const mistakes = mistakesMatch ? mistakesMatch[1].trim() : 'No mistakes identified';
-    const feedback = feedbackMatch ? feedbackMatch[1].trim() : 'No feedback available';
     
-    return { score, mistakes, feedback };
-  }
-
-
+    private parseResponse(response: string): Result {
+        try {
+            // Parse the JSON response directly
+            const jsonResponse = JSON.parse(response.trim());
+            
+            const score = jsonResponse.score || 0;
+            const feedback = jsonResponse.feedback || 'No feedback available';
+            
+            return { score, feedback };
+        } catch (error) {
+            // Fallback to original parsing if JSON parsing fails
+            const scoreMatch = response.match(/SCORE:\s*(\d+)/i);
+            const feedbackMatch = response.match(/FEEDBACK:\s*([\s\S]*)/i);    
+            const score = scoreMatch ? parseInt(scoreMatch[1]) : 0;
+            const feedback = feedbackMatch ? feedbackMatch[1].trim() : 'No feedback available';
+            
+            return { score, feedback };
+        }
+    }
 }
+
 async function getScore(resumeText:string):Promise<Result>{
     const atsScorer=new ATSScoreer();
     const result=await atsScorer.calculateATS(resumeText);
     return result;
 }
+
 const app = express();
 const PORT = 3000;
+
 app.use(express.json());
+
 app.post('/api/score',upload.single('resume'),async(req,res)=>{
     try{
         if(!req.file){
@@ -136,7 +168,6 @@ app.post('/api/score',upload.single('resume'),async(req,res)=>{
         res.json({
             success:true,
             atsScore:result.score,
-            mistakes:result.mistakes,
             feedback:result.feedback
         })
         
@@ -147,9 +178,11 @@ app.post('/api/score',upload.single('resume'),async(req,res)=>{
         
     }
 });
+
 app.get('/health', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date().toISOString() });
 });
+
 app.listen(PORT, () => {
   console.log(`ATS Scorer API server running on port ${PORT}`);
   console.log(`POST /ats-score - Upload resume PDF for ATS scoring`);

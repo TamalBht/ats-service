@@ -1,4 +1,4 @@
-import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
+import pdf from 'pdf-parse';
 import * as dotenv from "dotenv"
 
 
@@ -18,7 +18,7 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 async function pdf_text(path:String){
     const pdfPath=`${path}`||"./docs/story.pdf"
-    const loader = new PDFLoader(pdfPath)
+    const loader = new pdf(pdfPath)
     const docs=await loader.load();
     var textt=docs[0].pageContent;
     return textt;

@@ -178,6 +178,9 @@ app.post('/api/score',upload.single('resume'),async(req,res)=>{
         
     }
 });
+app.get('/',(req,res)=>{
+    res.send('Welcome to the ATS Scorer API. Use POST /api/score with a PDF resume to get started.');
+})
 
 app.get('/health', (req, res) => {
   res.json({ status: 'Server is running', timestamp: new Date().toISOString() });

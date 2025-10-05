@@ -1,24 +1,13 @@
-import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
 import * as dotenv from "dotenv";
+import pdf from 'pdf-parse';
 import Groq from 'groq-sdk';
 import express from 'express';
 import multer from "multer";
 dotenv.config();
 const upload = multer({ storage: multer.memoryStorage() });
-async function pdf_text(path) {
-    const pdfPath = `${path}` || "./docs/story.pdf";
-    const loader = new PDFLoader(pdfPath);
-    const docs = await loader.load();
-    var textt = docs[0].pageContent;
-    return textt;
-}
 async function pdf_parse(buffer) {
-    const uintArray = new Uint8Array(buffer);
-    const blob = new Blob([uintArray], { type: 'application/pdf' });
-    const loader = new PDFLoader(blob);
-    const docs = await loader.load();
-    var textt = docs[0].pageContent;
-    return textt;
+    const data = await pdf(buffer);
+    return data.text;
 }
 class ATSScoreer {
     groq;

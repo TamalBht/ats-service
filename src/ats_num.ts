@@ -16,17 +16,11 @@ interface Result {
 }
 const upload = multer({ storage: multer.memoryStorage() });
 
-async function pdf_text(path:String){
-    const pdfPath=`${path}`||"./docs/story.pdf"
-    const loader = new pdf(pdfPath)
-    const docs=await loader.load();
-    var textt=docs[0].pageContent;
-    return textt;
-}
+
 async function pdf_parse(buffer:Buffer){
     const uintArray = new Uint8Array(buffer);
     const blob=new Blob([uintArray],{type:'application/pdf'});
-    const loader = new PDFLoader(blob)
+    const loader = new pdf(blob)
     const docs=await loader.load();
     var textt=docs[0].pageContent;
     return textt;

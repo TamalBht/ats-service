@@ -6,5 +6,11 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "skipLibCheck": true,
-  }
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "resolveJsonModule": true,
+    "sourceMap": true
+  },
+   "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
